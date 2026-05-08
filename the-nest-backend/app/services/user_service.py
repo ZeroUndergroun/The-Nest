@@ -6,6 +6,22 @@ from app.models.follow import Follow
 from app.models.user import User
 
 
+def get_public_profile(db: Session, username: str) -> dict:
+    user = get_profile(db, username)
+    follower_count = db.query(Follow).filter(Follow.following_id == user.id).count()
+    following_count = db.query(Follow).filter(Follow.follower_id == user.id).count()
+    return {
+        "username": user.username,
+        "display_name": user.display_name,
+        "avatar_url": user.avatar_url,
+        "bio": user.bio,
+        "role": user.role,
+        "created_at": user.created_at,
+        "follower_count": follower_count,
+        "following_count": following_count,
+    }
+
+
 def get_profile(db: Session, username: str) -> User:
     user = db.query(User).filter(User.username == username).first()
     if not user:

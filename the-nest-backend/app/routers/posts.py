@@ -17,6 +17,11 @@ def get_feed(current_user: User = Depends(get_current_user), db: Session = Depen
     return feed_service.get_home_feed(db, current_user)
 
 
+@router.get("/discover")
+def get_discover(page: int = 1, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return feed_service.get_discover_feed(db, page=page)
+
+
 @router.post("/", response_model=PostResponse, status_code=201)
 def create_post(body: PostCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return post_service.create_post(db, current_user, body.content, body.parent_post_id)
