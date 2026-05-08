@@ -35,6 +35,7 @@ students to connect, share, and build relationships across class years.
 | `current_student` | Actively enrolled at Cal State LA |
 | `alumni` | Graduated from Cal State LA |
 | `incoming_student` | Admitted but not yet on campus |
+| `staff` | Cal State LA faculty or staff member |
 
 ### MVP feature set
 
@@ -93,7 +94,7 @@ username        VARCHAR UNIQUE NOT NULL
 display_name    VARCHAR NOT NULL
 avatar_url      VARCHAR
 bio             TEXT
-role            ENUM('current_student', 'alumni', 'incoming_student') NOT NULL
+role            ENUM('current_student', 'alumni', 'incoming_student', 'staff') NOT NULL
 email_verified  BOOLEAN DEFAULT false
 is_active       BOOLEAN DEFAULT true
 created_at      TIMESTAMP DEFAULT now()
