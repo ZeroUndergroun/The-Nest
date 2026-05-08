@@ -27,8 +27,8 @@ class UserPublicProfile(BaseModel):
     bio: Optional[str]
     role: UserRole
     created_at: datetime
-
-    model_config = {"from_attributes": True}
+    follower_count: int = 0
+    following_count: int = 0
 
 
 class UserUpdate(BaseModel):

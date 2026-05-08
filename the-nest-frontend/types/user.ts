@@ -14,11 +14,12 @@ export interface User {
 }
 
 export interface UserPublicProfile {
-  id: string
   username: string
   display_name: string
   avatar_url: string | null
   bio: string | null
   role: Role
   created_at: string
+  follower_count: number
+  following_count: number
 }
