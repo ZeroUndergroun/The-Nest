@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { Bird, Bell, Home, LogOut, Mail, User } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 
 const links = [
-  { href: '/feed', label: 'Home', icon: '⌂' },
-  { href: '/notifications', label: 'Notifications', icon: '🔔' },
-  { href: '/messages', label: 'Messages', icon: '✉' },
+  { href: '/feed', label: 'Home', Icon: Home },
+  { href: '/notifications', label: 'Notifications', Icon: Bell },
+  { href: '/messages', label: 'Messages', Icon: Mail },
 ]
 
 export default function Sidebar() {
@@ -26,10 +27,11 @@ export default function Sidebar() {
 
   return (
     <nav className="flex h-full flex-col gap-1 p-4">
-      <Link href="/feed" className="mb-6 px-3 text-xl font-bold text-amber-500">
+      <Link href="/feed" className="mb-6 flex items-center gap-2 px-3 text-xl font-bold text-amber-500">
+        <Bird size={26} />
         The Nest
       </Link>
-      {links.map(({ href, label, icon }) => (
+      {links.map(({ href, label, Icon }) => (
         <Link
           key={href}
           href={href}
@@ -39,7 +41,7 @@ export default function Sidebar() {
               : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
           }`}
         >
-          <span>{icon}</span>
+          <Icon size={20} />
           {label}
         </Link>
       ))}
@@ -48,7 +50,7 @@ export default function Sidebar() {
           href={`/profile/${user.username}`}
           className="flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         >
-          <span>👤</span>
+          <User size={20} />
           Profile
         </Link>
       )}
@@ -57,7 +59,7 @@ export default function Sidebar() {
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         >
-          <span>↩</span>
+          <LogOut size={20} />
           Sign out
         </button>
       </div>
