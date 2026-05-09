@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.config import settings
+from app.dependencies import get_current_user
+from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, VerifyEmailRequest
+from app.schemas.user import UserResponse
 from app.services import auth_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -24,10 +27,15 @@ def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    tokens = auth_service.login(db, body.email, body.password)
-    response.set_cookie("access_token", tokens["access_token"], **_COOKIE_OPTS)
-    response.set_cookie("refresh_token", tokens["refresh_token"], **_COOKIE_OPTS)
-    return {"message": "Logged in"}
+    result = auth_service.login(db, body.email, body.password)
+    response.set_cookie("access_token", result["access_token"], **_COOKIE_OPTS)
+    response.set_cookie("refresh_token", result["refresh_token"], **_COOKIE_OPTS)
+    return {"message": "Logged in", "user": UserResponse.model_validate(result["user"])}
+
+
+@router.get("/me", response_model=UserResponse)
+def me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 
 @router.post("/logout")

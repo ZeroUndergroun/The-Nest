@@ -100,6 +100,7 @@ def login(db: Session, email: str, password: str) -> dict:
     return {
         "access_token": create_access_token(str(user.id)),
         "refresh_token": create_refresh_token(str(user.id)),
+        "user": user,
     }
 
 

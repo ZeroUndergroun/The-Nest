@@ -1,8 +1,9 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bird, Bell, Home, LogOut, Mail, User } from 'lucide-react'
+import { Bell, Bird, Home, LogOut, Mail, User } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 
@@ -15,52 +16,126 @@ const links = [
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
+  const [popupOpen, setPopupOpen] = useState(false)
+  const popupRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!user) {
+      api.get('/api/auth/me')
+        .then(({ data }) => setUser(data))
+        .catch(() => {})
+    }
+  }, [user, setUser])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setPopupOpen(false)
+      }
+    }
+    if (popupOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [popupOpen])
 
   async function handleLogout() {
     try {
       await api.post('/api/auth/logout')
     } finally {
+      setUser(null)
       router.push('/login')
     }
   }
 
   return (
-    <nav className="flex h-full flex-col gap-1 p-4">
-      <Link href="/feed" className="mb-6 flex items-center gap-2 px-3 text-xl font-bold text-amber-500">
-        <Bird size={26} />
-        The Nest
+    <nav className="flex h-full flex-col gap-1 p-2 xl:p-4">
+      {/* Logo */}
+      <Link
+        href="/feed"
+        className="mb-6 flex items-center justify-center gap-2 p-2 text-xl font-bold text-amber-500 xl:justify-start xl:px-3"
+      >
+        <Bird size={28} />
+        <span className="hidden xl:inline">The Nest</span>
       </Link>
+
+      {/* Nav links */}
       {links.map(({ href, label, Icon }) => (
         <Link
           key={href}
           href={href}
-          className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex items-center justify-center gap-3 rounded-full p-3 text-sm font-medium transition-colors xl:justify-start xl:px-4 xl:py-2.5 ${
             pathname === href
               ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
               : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
           }`}
         >
-          <Icon size={20} />
-          {label}
+          <Icon size={22} className="flex-shrink-0" />
+          <span className="hidden xl:block">{label}</span>
         </Link>
       ))}
+
+      {/* Profile link */}
       {user && (
         <Link
           href={`/profile/${user.username}`}
-          className="flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+          className={`flex items-center justify-center gap-3 rounded-full p-3 text-sm font-medium transition-colors xl:justify-start xl:px-4 xl:py-2.5 ${
+            pathname === `/profile/${user.username}`
+              ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
+              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+          }`}
         >
-          <User size={20} />
-          Profile
+          <User size={22} className="flex-shrink-0" />
+          <span className="hidden xl:block">Profile</span>
         </Link>
       )}
-      <div className="mt-auto">
+
+      {/* Avatar / account switcher */}
+      <div className="relative mt-auto" ref={popupRef}>
+        {popupOpen && (
+          <div className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+            <div className="px-4 py-3">
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                {user?.display_name ?? '—'}
+              </p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                @{user?.username ?? '—'}
+              </p>
+            </div>
+            <div className="border-t border-gray-100 p-1 dark:border-gray-800">
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                <LogOut size={16} />
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+          onClick={() => setPopupOpen((o) => !o)}
+          className="flex w-full items-center justify-center gap-3 rounded-full p-2 transition-colors hover:bg-gray-100 xl:justify-start xl:px-3 dark:hover:bg-gray-800"
         >
-          <LogOut size={20} />
-          Sign out
+          {user?.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt={user.display_name}
+              className="h-9 w-9 flex-shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-semibold text-white">
+              {user?.display_name?.[0]?.toUpperCase() ?? '?'}
+            </div>
+          )}
+          <div className="hidden min-w-0 text-left xl:block">
+            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+              {user?.display_name}
+            </p>
+            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+              @{user?.username}
+            </p>
+          </div>
         </button>
       </div>
     </nav>
