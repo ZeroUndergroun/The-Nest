@@ -10,6 +10,15 @@ class PostCreate(BaseModel):
     parent_post_id: Optional[UUID] = None
 
 
+class PostAuthor(BaseModel):
+    username: str
+    display_name: str
+    avatar_url: Optional[str]
+    role: str
+
+    model_config = {"from_attributes": True}
+
+
 class PostResponse(BaseModel):
     id: UUID
     user_id: UUID
@@ -21,3 +30,7 @@ class PostResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PostWithAuthor(PostResponse):
+    user: Optional[PostAuthor] = None
