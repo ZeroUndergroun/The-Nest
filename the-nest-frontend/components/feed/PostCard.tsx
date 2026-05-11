@@ -13,7 +13,7 @@ interface PostCardProps {
 export default function PostCard({ post, onLike, onRepost }: PostCardProps) {
   const username = post.user?.username ?? 'unknown'
   const displayName = post.user?.display_name ?? 'Unknown User'
-  const initial = displayName.charAt(0).toUpperCase()
+  const initial = username.charAt(0).toUpperCase()
 
   return (
     <article className="border-b border-gray-200 p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900">

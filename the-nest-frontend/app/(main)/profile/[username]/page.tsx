@@ -29,6 +29,7 @@ export default function ProfilePage() {
           api.get(`/api/users/${username}/posts`),
         ])
         setProfile(profileRes.data)
+        setFollowing(profileRes.data.is_following)
         setPosts(postsRes.data)
       } catch {
         // 401s redirect via interceptor
@@ -60,7 +61,7 @@ export default function ProfilePage() {
     )
   }
 
-  const initial = profile.display_name.charAt(0).toUpperCase()
+  const initial = profile.username.charAt(0).toUpperCase()
   const isMe = me?.username === username
 
   return (

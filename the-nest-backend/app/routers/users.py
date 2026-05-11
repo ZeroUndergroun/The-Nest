@@ -25,7 +25,7 @@ def update_me(body: UserUpdate, current_user: User = Depends(get_current_user), 
 
 @router.get("/{username}", response_model=UserPublicProfile)
 def get_profile(username: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return user_service.get_public_profile(db, username)
+    return user_service.get_public_profile(db, username, current_user.id)
 
 
 @router.get("/{username}/posts")

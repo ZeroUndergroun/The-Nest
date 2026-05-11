@@ -29,6 +29,7 @@ class UserPublicProfile(BaseModel):
     created_at: datetime
     follower_count: int = 0
     following_count: int = 0
+    is_following: bool = False
 
 
 class UserUpdate(BaseModel):

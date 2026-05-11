@@ -7,20 +7,26 @@ import { useAuthStore } from '@/store/authStore'
 
 interface ComposeBoxProps {
   onPost?: () => void
+  parentPostId?: string
+  placeholder?: string
 }
 
-export default function ComposeBox({ onPost }: ComposeBoxProps) {
+export default function ComposeBox({ onPost, parentPostId, placeholder }: ComposeBoxProps) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const { user } = useAuthStore()
   const remaining = 280 - content.length
-  const initial = user?.display_name?.charAt(0).toUpperCase() ?? '?'
+  const initial = user?.username?.charAt(0).toUpperCase() ?? '?'
 
   async function handleSubmit() {
     if (!content.trim() || loading) return
     setLoading(true)
     try {
-      await api.post('/api/posts/', { content })
+      if (parentPostId) {
+        await api.post(`/api/posts/${parentPostId}/reply`, { content })
+      } else {
+        await api.post('/api/posts/', { content })
+      }
       setContent('')
       onPost?.()
     } catch {
@@ -44,7 +50,7 @@ export default function ComposeBox({ onPost }: ComposeBoxProps) {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="What's happening at Cal State LA?"
+            placeholder={placeholder ?? "What's happening at Cal State LA?"}
             className="w-full resize-none border-none bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none min-h-[80px] dark:text-white dark:placeholder:text-gray-500"
             maxLength={280}
           />

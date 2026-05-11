@@ -12,7 +12,8 @@ from app.services import auth_service
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _SECURE = settings.frontend_url.startswith("https")
-_COOKIE_OPTS = {"httponly": True, "samesite": "strict", "secure": _SECURE}
+_SAMESITE = "none" if _SECURE else "lax"
+_COOKIE_OPTS = {"httponly": True, "samesite": _SAMESITE, "secure": _SECURE}
 
 
 @router.post("/register", status_code=201)

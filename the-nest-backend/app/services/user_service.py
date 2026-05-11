@@ -6,10 +6,14 @@ from app.models.follow import Follow
 from app.models.user import User
 
 
-def get_public_profile(db: Session, username: str) -> dict:
+def get_public_profile(db: Session, username: str, current_user_id) -> dict:
     user = get_profile(db, username)
     follower_count = db.query(Follow).filter(Follow.following_id == user.id).count()
     following_count = db.query(Follow).filter(Follow.follower_id == user.id).count()
+    is_following = db.query(Follow).filter(
+        Follow.follower_id == current_user_id,
+        Follow.following_id == user.id,
+    ).first() is not None
     return {
         "username": user.username,
         "display_name": user.display_name,
@@ -19,6 +23,7 @@ def get_public_profile(db: Session, username: str) -> dict:
         "created_at": user.created_at,
         "follower_count": follower_count,
         "following_count": following_count,
+        "is_following": is_following,
     }
 
 

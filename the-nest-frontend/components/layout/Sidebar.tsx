@@ -125,7 +125,7 @@ export default function Sidebar() {
             />
           ) : (
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-semibold text-white">
-              {user?.display_name?.[0]?.toUpperCase() ?? '?'}
+              {user?.username?.[0]?.toUpperCase() ?? '?'}
             </div>
           )}
           <div className="hidden min-w-0 text-left xl:block">

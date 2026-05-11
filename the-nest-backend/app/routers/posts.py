@@ -47,6 +47,17 @@ def repost(post_id: UUID, current_user: User = Depends(get_current_user), db: Se
     return post_service.toggle_repost(db, current_user, post_id)
 
 
+@router.get("/{post_id}/replies", response_model=list[PostWithAuthor])
+def get_replies(post_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.models.post import Post as PostModel
+    return (
+        db.query(PostModel)
+        .filter(PostModel.parent_post_id == post_id)
+        .order_by(PostModel.created_at.asc())
+        .all()
+    )
+
+
 @router.post("/{post_id}/reply", response_model=PostWithAuthor, status_code=201)
 def reply(post_id: UUID, body: PostCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return post_service.create_post(db, current_user, body.content, parent_post_id=post_id)
