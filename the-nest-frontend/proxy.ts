@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = request.cookies.get('access_token')
+  const token = request.cookies.get('session')
 
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url))

@@ -23,6 +23,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/api/auth/login', { email, password })
       setUser(data.user)
+      document.cookie = 'session=1; path=/; max-age=604800; SameSite=Lax'
       router.push('/feed')
     } catch (err: unknown) {
       const msg =
