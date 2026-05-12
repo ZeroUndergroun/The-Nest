@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.follow import Follow
 from app.models.user import User
+from app.services import notification_service
 
 
 def get_public_profile(db: Session, username: str, current_user_id) -> dict:
@@ -66,6 +67,7 @@ def toggle_follow(db: Session, follower: User, username: str) -> dict:
     else:
         db.add(Follow(follower_id=follower.id, following_id=target.id))
         db.commit()
+        notification_service.create_notification(db, target.id, follower.id, "follow")
         return {"following": True}
 
 

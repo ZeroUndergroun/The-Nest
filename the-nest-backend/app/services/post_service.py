@@ -1,3 +1,4 @@
+import re
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -7,10 +8,12 @@ from app.models.like import Like
 from app.models.post import Post
 from app.models.repost import Repost
 from app.models.user import User
+from app.services import hashtag_service, notification_service
 
 
 def create_post(db: Session, user: User, content: str, parent_post_id: UUID | None = None) -> Post:
     is_reply = parent_post_id is not None
+    parent = None
 
     if is_reply:
         parent = db.query(Post).filter(Post.id == parent_post_id).first()
@@ -27,9 +30,17 @@ def create_post(db: Session, user: User, content: str, parent_post_id: UUID | No
     db.commit()
     db.refresh(post)
 
-    if is_reply:
+    if is_reply and parent:
         parent.reply_count += 1
         db.commit()
+        notification_service.create_notification(db, parent.user_id, user.id, "reply", post.id)
+
+    for username in set(re.findall(r'@(\w+)', content)):
+        mentioned = db.query(User).filter(User.username == username).first()
+        if mentioned:
+            notification_service.create_notification(db, mentioned.id, user.id, "mention", post.id)
+
+    hashtag_service.parse_and_link_hashtags(db, post.id, content)
 
     return post
 
@@ -67,6 +78,7 @@ def toggle_like(db: Session, user: User, post_id: UUID) -> dict:
         db.add(Like(user_id=user.id, post_id=post_id))
         post.like_count += 1
         db.commit()
+        notification_service.create_notification(db, post.user_id, user.id, "like", post_id)
         return {"liked": True, "like_count": post.like_count}
 
 
@@ -86,4 +98,5 @@ def toggle_repost(db: Session, user: User, post_id: UUID) -> dict:
         db.add(Repost(user_id=user.id, post_id=post_id))
         post.repost_count += 1
         db.commit()
+        notification_service.create_notification(db, post.user_id, user.id, "repost", post_id)
         return {"reposted": True, "repost_count": post.repost_count}

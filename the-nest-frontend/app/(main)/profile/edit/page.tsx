@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Camera } from 'lucide-react'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import Button from '@/components/ui/Button'
@@ -11,10 +12,12 @@ import Input from '@/components/ui/Input'
 export default function EditProfilePage() {
   const router = useRouter()
   const { user, setUser } = useAuthStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
@@ -24,6 +27,26 @@ export default function EditProfilePage() {
       setBio(user.bio ?? '')
     }
   }, [user])
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const { data } = await api.post('/api/users/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setUser(data)
+    } catch {
+      setError('Avatar upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,6 +87,37 @@ export default function EditProfilePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-lg space-y-5 p-6">
+        {/* Avatar */}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="group relative"
+          >
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-amber-400 text-2xl font-bold text-black">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt={user.display_name} className="h-full w-full object-cover" />
+              ) : (
+                user?.username?.[0]?.toUpperCase() ?? '?'
+              )}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Camera size={20} className="text-white" />
+            </div>
+          </button>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            {uploading ? 'Uploading…' : 'Click to change photo'}
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </div>
+
         <Input
           label="Display name"
           value={displayName}

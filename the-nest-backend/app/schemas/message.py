@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -17,3 +18,16 @@ class MessageResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ConversationPartner(BaseModel):
+    username: str
+    display_name: str
+    avatar_url: Optional[str] = None
+
+
+class ConversationResponse(BaseModel):
+    other_user: ConversationPartner
+    latest_message: str
+    latest_at: datetime
+    unread_count: int

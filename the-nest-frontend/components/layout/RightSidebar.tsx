@@ -1,4 +1,9 @@
-import { BookOpen, Calendar, Megaphone, Pin } from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { BookOpen, Calendar, Megaphone, Pin, TrendingUp } from 'lucide-react'
+import api from '@/lib/api'
 
 const PINS = [
   {
@@ -21,9 +26,23 @@ const PINS = [
   },
 ]
 
+interface TrendingTag {
+  tag: string
+  usage_count: number
+}
+
 export default function RightSidebar() {
+  const [trending, setTrending] = useState<TrendingTag[]>([])
+
+  useEffect(() => {
+    api.get('/api/hashtags/trending')
+      .then(({ data }) => setTrending(data))
+      .catch(() => {})
+  }, [])
+
   return (
-    <div className="max-w-sm p-4">
+    <div className="max-w-sm p-4 space-y-4">
+      {/* Bulletin Board */}
       <div className="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
         <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <Pin size={15} className="text-amber-500" />
@@ -53,6 +72,29 @@ export default function RightSidebar() {
           </p>
         </div>
       </div>
+
+      {/* Trending Hashtags */}
+      {trending.length > 0 && (
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+            <TrendingUp size={15} className="text-amber-500" />
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Trending</h2>
+          </div>
+
+          <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
+            {trending.map(({ tag, usage_count }) => (
+              <Link
+                key={tag}
+                href={`/hashtag/${tag}`}
+                className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <span className="text-sm font-semibold text-amber-500">#{tag}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{usage_count} posts</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

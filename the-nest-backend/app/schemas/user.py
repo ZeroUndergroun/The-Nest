@@ -15,6 +15,8 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str]
     bio: Optional[str]
     role: UserRole
+    is_admin: bool = False
+    is_approved: bool = True
     created_at: datetime
 
     model_config = {"from_attributes": True}
