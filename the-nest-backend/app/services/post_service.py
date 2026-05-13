@@ -11,7 +11,14 @@ from app.models.user import User
 from app.services import hashtag_service, notification_service
 
 
-def create_post(db: Session, user: User, content: str, parent_post_id: UUID | None = None) -> Post:
+def create_post(
+    db: Session,
+    user: User,
+    content: str,
+    parent_post_id: UUID | None = None,
+    media_url: str | None = None,
+    media_type: str | None = None,
+) -> Post:
     is_reply = parent_post_id is not None
     parent = None
 
@@ -25,6 +32,8 @@ def create_post(db: Session, user: User, content: str, parent_post_id: UUID | No
         content=content,
         parent_post_id=parent_post_id,
         is_reply=is_reply,
+        media_url=media_url,
+        media_type=media_type,
     )
     db.add(post)
     db.commit()

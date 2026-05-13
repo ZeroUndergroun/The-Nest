@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import type { Conversation, Message } from '@/types/message'
@@ -22,16 +23,16 @@ export default function MessagesPage() {
   const { user } = useAuthStore()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeUsername, setActiveUsername] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const withUser = params.get('with')
     if (withUser) setActiveUsername(withUser)
   }, [])
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [sending, setSending] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     api.get('/api/messages/')
@@ -50,7 +51,6 @@ export default function MessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Poll for new messages every 10s when a thread is open
   useEffect(() => {
     if (!activeUsername) return
     const id = setInterval(() => {
@@ -89,9 +89,14 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Conversation list */}
-      <div className="w-64 flex-shrink-0 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+    // On mobile: flex-col, show one panel at a time. On md+: flex-row side by side.
+    <div className="flex h-screen flex-col md:flex-row">
+      {/* Conversation list — hidden on mobile when thread is active */}
+      <div
+        className={`flex-shrink-0 overflow-y-auto border-gray-200 dark:border-gray-700 md:w-64 md:border-r ${
+          activeUsername ? 'hidden md:block' : 'flex flex-1 flex-col md:flex-none'
+        }`}
+      >
         <div className="sticky top-0 border-b border-gray-200 bg-white/90 p-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">Messages</h1>
         </div>
@@ -132,15 +137,25 @@ export default function MessagesPage() {
         )}
       </div>
 
-      {/* Thread */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Thread — hidden on mobile when no active conversation */}
+      <div
+        className={`flex min-w-0 flex-col md:flex-1 ${
+          activeUsername ? 'flex flex-1' : 'hidden md:flex'
+        }`}
+      >
         {!activeUsername ? (
           <div className="flex flex-1 items-center justify-center text-sm text-gray-400 dark:text-gray-500">
             Select a conversation
           </div>
         ) : (
           <>
-            <div className="sticky top-0 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
+            <div className="sticky top-0 flex items-center gap-2 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
+              <button
+                onClick={() => setActiveUsername(null)}
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 md:hidden"
+              >
+                <ArrowLeft size={20} />
+              </button>
               <p className="font-semibold text-gray-900 dark:text-white">@{activeUsername}</p>
             </div>
 
@@ -179,7 +194,7 @@ export default function MessagesPage() {
                 <button
                   type="submit"
                   disabled={!input.trim() || sending}
-                  className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+                  className="min-h-[44px] min-w-[44px] rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
                 >
                   Send
                 </button>

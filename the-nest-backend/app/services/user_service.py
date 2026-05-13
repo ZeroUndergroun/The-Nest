@@ -71,8 +71,8 @@ def toggle_follow(db: Session, follower: User, username: str) -> dict:
         return {"following": True}
 
 
-def search_users(db: Session, query: str) -> list[User]:
-    return (
+def search_users(db: Session, query: str, current_user_id=None) -> list[dict]:
+    users = (
         db.query(User)
         .filter(
             or_(
@@ -83,6 +83,26 @@ def search_users(db: Session, query: str) -> list[User]:
         .limit(20)
         .all()
     )
+    following_ids: set = set()
+    if current_user_id:
+        following_ids = {
+            row.following_id
+            for row in db.query(Follow.following_id).filter(
+                Follow.follower_id == current_user_id,
+                Follow.following_id.in_([u.id for u in users]),
+            ).all()
+        }
+    return [
+        {
+            "id": str(u.id),
+            "username": u.username,
+            "display_name": u.display_name,
+            "avatar_url": u.avatar_url,
+            "role": u.role,
+            "is_following": u.id in following_ids,
+        }
+        for u in users
+    ]
 
 
 def get_followers(db: Session, username: str) -> list[User]:

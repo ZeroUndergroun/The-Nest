@@ -7,7 +7,7 @@ def send_verification_email(to_email: str, token: str) -> None:
     resend.api_key = settings.resend_api_key
     verify_url = f"{settings.frontend_url}/verify-email?token={token}"
     resend.Emails.send({
-        "from": "The Nest <onboarding@resend.dev>",
+        "from": settings.resend_from_email,
         "to": to_email,
         "subject": "Verify your Nest account",
         "html": (

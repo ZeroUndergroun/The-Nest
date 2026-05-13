@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { Paperclip, X } from 'lucide-react'
 import api from '@/lib/api'
 import Button from '@/components/ui/Button'
 import { useAuthStore } from '@/store/authStore'
@@ -14,23 +15,57 @@ interface ComposeBoxProps {
 export default function ComposeBox({ onPost, parentPostId, placeholder }: ComposeBoxProps) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { user } = useAuthStore()
   const remaining = 280 - content.length
   const initial = user?.username?.charAt(0).toUpperCase() ?? '?'
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setMediaFile(file)
+    setMediaPreview(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  function removeMedia() {
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview)
+    setMediaFile(null)
+    setMediaPreview(null)
+  }
 
   async function handleSubmit() {
     if (!content.trim() || loading) return
     setLoading(true)
     try {
-      if (parentPostId) {
-        await api.post(`/api/posts/${parentPostId}/reply`, { content })
-      } else {
-        await api.post('/api/posts/', { content })
+      let media_url: string | undefined
+      let media_type: string | undefined
+
+      if (mediaFile) {
+        const form = new FormData()
+        form.append('file', mediaFile)
+        const { data } = await api.post('/api/media/upload', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        media_url = data.url
+        media_type = data.media_type
       }
+
+      const body = { content, media_url, media_type }
+
+      if (parentPostId) {
+        await api.post(`/api/posts/${parentPostId}/reply`, body)
+      } else {
+        await api.post('/api/posts/', body)
+      }
+
       setContent('')
+      removeMedia()
       onPost?.()
     } catch {
-      // 401s are handled by the api interceptor
+      // 401s handled by the api interceptor
     } finally {
       setLoading(false)
     }
@@ -54,10 +89,52 @@ export default function ComposeBox({ onPost, parentPostId, placeholder }: Compos
             className="w-full resize-none border-none bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none min-h-[80px] dark:text-white dark:placeholder:text-gray-500"
             maxLength={280}
           />
+
+          {/* Media preview */}
+          {mediaPreview && mediaFile && (
+            <div className="relative mt-2 w-fit max-w-full">
+              {mediaFile.type.startsWith('image/') ? (
+                <img
+                  src={mediaPreview}
+                  alt="Attachment preview"
+                  className="max-h-64 rounded-xl object-cover"
+                />
+              ) : (
+                <video
+                  src={mediaPreview}
+                  controls
+                  className="max-h-64 w-full rounded-xl"
+                />
+              )}
+              <button
+                onClick={removeMedia}
+                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           <div className="mt-2 flex items-center justify-between">
-            <span className={`text-xs ${remaining < 20 ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`}>
-              {remaining}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-full p-1.5 text-amber-500 transition-colors hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                title="Attach image or video"
+              >
+                <Paperclip size={18} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <span className={`text-xs ${remaining < 20 ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`}>
+                {remaining}
+              </span>
+            </div>
             <Button onClick={handleSubmit} loading={loading} disabled={!content.trim()}>
               Post
             </Button>

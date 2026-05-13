@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/search")
 def search_users(q: str = Query(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return user_service.search_users(db, q)
+    return user_service.search_users(db, q, current_user.id)
 
 
 @router.patch("/me", response_model=UserResponse)
