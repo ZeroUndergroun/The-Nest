@@ -99,6 +99,11 @@ export default function RegisterPage() {
             ))}
           </select>
         </div>
+        {form.role === 'staff' && (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
+            Staff accounts require admin approval before you can log in. You'll be able to sign in once your account is reviewed.
+          </p>
+        )}
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit" loading={loading} className="mt-2 w-full">
           Create account

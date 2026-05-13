@@ -10,6 +10,10 @@ class PostCreate(BaseModel):
     parent_post_id: Optional[UUID] = None
 
 
+class PostUpdate(BaseModel):
+    content: str = Field(..., max_length=280)
+
+
 class PostAuthor(BaseModel):
     username: str
     display_name: str
@@ -23,14 +27,18 @@ class PostResponse(BaseModel):
     id: UUID
     user_id: UUID
     content: str
+    parent_post_id: Optional[UUID] = None
     is_reply: bool
     like_count: int
     reply_count: int
     repost_count: int
+    edit_count: int
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
 
 class PostWithAuthor(PostResponse):
     user: Optional[PostAuthor] = None
+    reposted_by: Optional[str] = None

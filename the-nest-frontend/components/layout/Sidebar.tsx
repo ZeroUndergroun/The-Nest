@@ -3,21 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, Bird, Home, LogOut, Mail, User } from 'lucide-react'
+import { Bell, Bird, Home, LogOut, Mail, ShieldCheck, User } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
-
-const links = [
-  { href: '/feed', label: 'Home', Icon: Home },
-  { href: '/notifications', label: 'Notifications', Icon: Bell },
-  { href: '/messages', label: 'Messages', Icon: Mail },
-]
 
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, setUser } = useAuthStore()
   const [popupOpen, setPopupOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const popupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -27,6 +22,16 @@ export default function Sidebar() {
         .catch(() => {})
     }
   }, [user, setUser])
+
+  useEffect(() => {
+    api.get('/api/notifications/unread-count')
+      .then(({ data }) => setUnreadCount(data.count))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (pathname === '/notifications') setUnreadCount(0)
+  }, [pathname])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -48,6 +53,13 @@ export default function Sidebar() {
     }
   }
 
+  const navLinks = [
+    { href: '/feed', label: 'Home', Icon: Home },
+    { href: '/messages', label: 'Messages', Icon: Mail },
+  ]
+
+  const isActive = (href: string) => pathname === href
+
   return (
     <nav className="flex h-full flex-col gap-1 p-2 xl:p-4">
       {/* Logo */}
@@ -60,12 +72,12 @@ export default function Sidebar() {
       </Link>
 
       {/* Nav links */}
-      {links.map(({ href, label, Icon }) => (
+      {navLinks.map(({ href, label, Icon }) => (
         <Link
           key={href}
           href={href}
           className={`flex items-center justify-center gap-3 rounded-full p-3 text-sm font-medium transition-colors xl:justify-start xl:px-4 xl:py-2.5 ${
-            pathname === href
+            isActive(href)
               ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
               : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
           }`}
@@ -74,6 +86,41 @@ export default function Sidebar() {
           <span className="hidden xl:block">{label}</span>
         </Link>
       ))}
+
+      {/* Notifications link with unread badge */}
+      <Link
+        href="/notifications"
+        className={`relative flex items-center justify-center gap-3 rounded-full p-3 text-sm font-medium transition-colors xl:justify-start xl:px-4 xl:py-2.5 ${
+          isActive('/notifications')
+            ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
+            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+        }`}
+      >
+        <div className="relative flex-shrink-0">
+          <Bell size={22} />
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
+        <span className="hidden xl:block">Notifications</span>
+      </Link>
+
+      {/* Admin link */}
+      {user?.is_admin && (
+        <Link
+          href="/admin/pending"
+          className={`flex items-center justify-center gap-3 rounded-full p-3 text-sm font-medium transition-colors xl:justify-start xl:px-4 xl:py-2.5 ${
+            pathname.startsWith('/admin')
+              ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
+              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+          }`}
+        >
+          <ShieldCheck size={22} className="flex-shrink-0" />
+          <span className="hidden xl:block">Admin</span>
+        </Link>
+      )}
 
       {/* Profile link */}
       {user && (

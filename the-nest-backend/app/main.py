@@ -6,7 +6,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
 from app.config import settings
-from app.routers import auth, hashtags, messages, notifications, posts, users
+from app.routers import admin, auth, hashtags, messages, notifications, posts, users
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -24,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin.router)
 app.include_router(auth.router)
 app.include_router(posts.router)
 app.include_router(users.router)

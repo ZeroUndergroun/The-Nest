@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { Mail } from 'lucide-react'
 import api from '@/lib/api'
 import type { UserPublicProfile } from '@/types/user'
 import type { Post } from '@/types/post'
@@ -11,13 +12,27 @@ import PostCard from '@/components/feed/PostCard'
 import Button from '@/components/ui/Button'
 import { useAuthStore } from '@/store/authStore'
 
+type Tab = 'posts' | 'replies'
+
+interface BasicUser {
+  username: string
+  display_name: string
+  avatar_url: string | null
+  role: string
+}
+
 export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const { user: me } = useAuthStore()
   const [profile, setProfile] = useState<UserPublicProfile | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
+  const [replies, setReplies] = useState<Post[]>([])
+  const [tab, setTab] = useState<Tab>('posts')
   const [following, setFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [openList, setOpenList] = useState<'followers' | 'following' | null>(null)
+  const [followersList, setFollowersList] = useState<BasicUser[]>([])
+  const [followingList, setFollowingList] = useState<BasicUser[]>([])
 
   useEffect(() => {
     if (!username) return
@@ -40,10 +55,42 @@ export default function ProfilePage() {
     load()
   }, [username])
 
+  async function handleTabChange(newTab: Tab) {
+    setTab(newTab)
+    if (newTab === 'replies' && replies.length === 0) {
+      try {
+        const res = await api.get(`/api/users/${username}/replies`)
+        setReplies(res.data)
+      } catch {}
+    }
+  }
+
   async function handleFollow() {
     try {
       const { data } = await api.post(`/api/users/${username}/follow`)
       setFollowing(data.following)
+      setProfile((prev) =>
+        prev
+          ? { ...prev, follower_count: prev.follower_count + (data.following ? 1 : -1) }
+          : prev
+      )
+    } catch {}
+  }
+
+  async function toggleList(type: 'followers' | 'following') {
+    if (openList === type) {
+      setOpenList(null)
+      return
+    }
+    setOpenList(type)
+    try {
+      if (type === 'followers' && followersList.length === 0) {
+        const res = await api.get(`/api/users/${username}/followers`)
+        setFollowersList(res.data)
+      } else if (type === 'following' && followingList.length === 0) {
+        const res = await api.get(`/api/users/${username}/following`)
+        setFollowingList(res.data)
+      }
     } catch {}
   }
 
@@ -63,6 +110,7 @@ export default function ProfilePage() {
 
   const initial = profile.username.charAt(0).toUpperCase()
   const isMe = me?.username === username
+  const activeList = openList === 'followers' ? followersList : followingList
 
   return (
     <div>
@@ -88,15 +136,23 @@ export default function ProfilePage() {
             initial
           )}
         </div>
-        <div className="pb-1">
+        <div className="flex gap-2 pb-1">
           {isMe ? (
             <Link href="/profile/edit">
               <Button variant="secondary">Edit profile</Button>
             </Link>
           ) : (
-            <Button variant={following ? 'secondary' : 'primary'} onClick={handleFollow}>
-              {following ? 'Following' : 'Follow'}
-            </Button>
+            <>
+              <Link
+                href={`/messages?with=${username}`}
+                className="flex items-center justify-center rounded-full border border-gray-300 p-2 text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                <Mail size={18} />
+              </Link>
+              <Button variant={following ? 'secondary' : 'primary'} onClick={handleFollow}>
+                {following ? 'Following' : 'Follow'}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -111,24 +167,107 @@ export default function ProfilePage() {
         {profile.bio && (
           <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{profile.bio}</p>
         )}
+
+        {/* Follower / Following counts — clickable */}
         <div className="mt-3 flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <span>
-            <span className="font-semibold text-gray-900 dark:text-white">{profile.following_count}</span>{' '}
+          <button onClick={() => toggleList('following')} className="hover:underline">
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {profile.following_count}
+            </span>{' '}
             Following
-          </span>
-          <span>
-            <span className="font-semibold text-gray-900 dark:text-white">{profile.follower_count}</span>{' '}
+          </button>
+          <button onClick={() => toggleList('followers')} className="hover:underline">
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {profile.follower_count}
+            </span>{' '}
             Followers
-          </span>
+          </button>
         </div>
+
+        {/* Inline followers / following list */}
+        {openList && (
+          <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+              <span className="text-sm font-semibold capitalize text-gray-900 dark:text-white">
+                {openList}
+              </span>
+              <button
+                onClick={() => setOpenList(null)}
+                className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                ✕ Close
+              </button>
+            </div>
+            {activeList.length === 0 ? (
+              <p className="p-4 text-center text-sm text-gray-400 dark:text-gray-500">
+                No {openList} yet.
+              </p>
+            ) : (
+              activeList.map((u) => (
+                <Link
+                  key={u.username}
+                  href={`/profile/${u.username}`}
+                  onClick={() => setOpenList(null)}
+                  className="flex items-center gap-3 border-b border-gray-100 px-3 py-2 last:border-b-0 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-gray-800"
+                >
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-400 text-sm font-bold text-black">
+                    {u.avatar_url ? (
+                      <img
+                        src={u.avatar_url}
+                        alt={u.display_name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      u.username.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {u.display_name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">@{u.username}</p>
+                  </div>
+                  <RoleBadge role={u.role as UserPublicProfile['role']} />
+                </Link>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Posts */}
-      <div className="border-t border-gray-200 dark:border-gray-700">
-        {posts.length === 0 ? (
-          <p className="p-8 text-center text-sm text-gray-400 dark:text-gray-500">No posts yet.</p>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
+        {(['posts', 'replies'] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => handleTabChange(t)}
+            className={`flex-1 py-3 text-sm font-semibold capitalize transition-colors ${
+              tab === t
+                ? 'border-b-2 border-amber-500 text-amber-500'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Post list */}
+      <div>
+        {tab === 'posts' ? (
+          posts.length === 0 ? (
+            <p className="p-8 text-center text-sm text-gray-400 dark:text-gray-500">
+              No posts yet.
+            </p>
+          ) : (
+            posts.map((post) => <PostCard key={post.id} post={post} />)
+          )
+        ) : replies.length === 0 ? (
+          <p className="p-8 text-center text-sm text-gray-400 dark:text-gray-500">
+            No replies yet.
+          </p>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          replies.map((post) => <PostCard key={post.id} post={post} />)
         )}
       </div>
     </div>

@@ -7,6 +7,10 @@ from app.database import get_db
 from app.models.user import User
 
 
+def _admin_emails() -> set[str]:
+    return {e.strip().lower() for e in (settings.admin_emails or "").split(",") if e.strip()}
+
+
 def verify_jwt(token: str) -> dict:
     try:
         return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
@@ -25,3 +29,9 @@ async def get_current_user(
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found")
     return user
+
+
+async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_admin and current_user.email.lower() not in _admin_emails():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user

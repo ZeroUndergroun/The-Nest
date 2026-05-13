@@ -36,8 +36,17 @@ def create_email_verify_token(user_id: str) -> str:
     return jwt.encode({"sub": user_id, "exp": expire, "type": "email_verify"}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
+def _is_allowed_email(email: str) -> bool:
+    if email.lower().endswith("@calstatela.edu"):
+        return True
+    if settings.dev_allowed_emails:
+        allowed = {e.strip().lower() for e in settings.dev_allowed_emails.split(",")}
+        return email.lower() in allowed
+    return False
+
+
 def register(db: Session, email: str, password: str, username: str, display_name: str, role: str) -> dict:
-    if not email.lower().endswith("@calstatela.edu"):
+    if not _is_allowed_email(email):
         raise HTTPException(status_code=400, detail="Only @calstatela.edu emails are allowed")
 
     if db.query(User).filter(User.email == email.lower()).first():
@@ -46,12 +55,16 @@ def register(db: Session, email: str, password: str, username: str, display_name
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
 
+    admin_emails = {e.strip().lower() for e in (settings.admin_emails or "").split(",") if e.strip()}
+
     user = User(
         email=email.lower(),
         username=username,
         display_name=display_name,
         role=role,
         password_hash=hash_password(password),
+        is_approved=role != "staff",
+        is_admin=email.lower() in admin_emails,
     )
     db.add(user)
     db.commit()
@@ -96,6 +109,9 @@ def login(db: Session, email: str, password: str) -> dict:
 
     if not user.is_active:
         raise HTTPException(status_code=401, detail="Account is inactive")
+
+    if not user.is_approved:
+        raise HTTPException(status_code=403, detail="Your account is pending admin approval")
 
     return {
         "access_token": create_access_token(str(user.id)),

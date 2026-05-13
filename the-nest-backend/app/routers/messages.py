@@ -6,26 +6,27 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.message import MessageCreate, MessageResponse
+from app.schemas.message import ConversationResponse, MessageCreate, MessageResponse
+from app.services import message_service
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
 
 
-@router.get("/")
+@router.get("/", response_model=list[ConversationResponse])
 def list_conversations(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    raise NotImplementedError
+    return message_service.list_conversations(db, current_user)
 
 
-@router.get("/{username}")
+@router.get("/{username}", response_model=list[MessageResponse])
 def get_conversation(username: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    raise NotImplementedError
+    return message_service.get_conversation(db, current_user, username)
 
 
 @router.post("/{username}", response_model=MessageResponse, status_code=201)
 def send_message(username: str, body: MessageCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    raise NotImplementedError
+    return message_service.send_message(db, current_user, username, body.content)
 
 
 @router.delete("/{message_id}", status_code=204)
 def delete_message(message_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    raise NotImplementedError
+    message_service.delete_message(db, current_user, message_id)

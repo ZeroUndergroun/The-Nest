@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.post import PostCreate, PostWithAuthor
+from app.schemas.post import PostCreate, PostUpdate, PostWithAuthor
 from app.services import feed_service, post_service
 
 router = APIRouter(prefix="/api/posts", tags=["posts"])
@@ -30,6 +30,11 @@ def create_post(body: PostCreate, current_user: User = Depends(get_current_user)
 @router.get("/{post_id}", response_model=PostWithAuthor)
 def get_post(post_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return post_service.get_post(db, post_id)
+
+
+@router.patch("/{post_id}", response_model=PostWithAuthor)
+def update_post(post_id: UUID, body: PostUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return post_service.update_post(db, current_user, post_id, body.content)
 
 
 @router.delete("/{post_id}", status_code=204)

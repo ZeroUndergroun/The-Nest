@@ -7,7 +7,10 @@ export interface Post {
   like_count: number
   reply_count: number
   repost_count: number
+  edit_count: number
   created_at: string
+  updated_at: string
+  reposted_by?: string
   user?: {
     username: string
     display_name: string

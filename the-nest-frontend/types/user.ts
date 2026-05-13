@@ -8,6 +8,8 @@ export interface User {
   avatar_url: string | null
   bio: string | null
   role: Role
+  is_admin: boolean
+  is_approved: boolean
   email_verified: boolean
   is_active: boolean
   created_at: string
