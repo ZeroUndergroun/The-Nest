@@ -1,9 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useEffect, useState, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import type { Conversation, Message } from '@/types/message'
@@ -23,11 +20,14 @@ function Avatar({ username, avatarUrl, displayName }: { username: string; avatar
 
 export default function MessagesPage() {
   const { user } = useAuthStore()
-  const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeUsername, setActiveUsername] = useState<string | null>(
-    searchParams.get('with')
-  )
+  const [activeUsername, setActiveUsername] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const withUser = params.get('with')
+    if (withUser) setActiveUsername(withUser)
+  }, [])
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
