@@ -52,6 +52,19 @@ def get_post(db: Session, post_id: UUID) -> Post:
     return post
 
 
+def update_post(db: Session, user: User, post_id: UUID, content: str) -> Post:
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if post.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not your post")
+    post.content = content
+    post.edit_count += 1
+    db.commit()
+    db.refresh(post)
+    return post
+
+
 def delete_post(db: Session, user: User, post_id: UUID) -> None:
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:

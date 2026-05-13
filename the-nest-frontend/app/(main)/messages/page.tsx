@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import type { Conversation, Message } from '@/types/message'
@@ -20,8 +21,11 @@ function Avatar({ username, avatarUrl, displayName }: { username: string; avatar
 
 export default function MessagesPage() {
   const { user } = useAuthStore()
+  const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeUsername, setActiveUsername] = useState<string | null>(null)
+  const [activeUsername, setActiveUsername] = useState<string | null>(
+    searchParams.get('with')
+  )
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -63,17 +67,19 @@ export default function MessagesPage() {
       const { data } = await api.post(`/api/messages/${activeUsername}`, { content: input.trim() })
       setMessages((prev) => [...prev, data])
       setInput('')
-      setConversations((prev) => {
-        const existing = prev.find((c) => c.other_user.username === activeUsername)
-        if (existing) {
-          return prev.map((c) =>
+      const isNew = !conversations.find((c) => c.other_user.username === activeUsername)
+      if (isNew) {
+        const { data: convos } = await api.get('/api/messages/')
+        setConversations(convos)
+      } else {
+        setConversations((prev) =>
+          prev.map((c) =>
             c.other_user.username === activeUsername
               ? { ...c, latest_message: data.content, latest_at: data.created_at }
               : c
           )
-        }
-        return prev
-      })
+        )
+      }
     } catch {
     } finally {
       setSending(false)

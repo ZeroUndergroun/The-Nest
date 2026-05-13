@@ -88,7 +88,12 @@ export default function PostDetailPage() {
         <h1 className="text-base font-bold text-gray-900 dark:text-white">Post</h1>
       </div>
 
-      <PostCard post={post} onLike={handleLike} onRepost={handleRepost} />
+      <PostCard
+        post={post}
+        onLike={handleLike}
+        onRepost={handleRepost}
+        onDelete={() => router.back()}
+      />
 
       <ComposeBox
         parentPostId={post.id}
