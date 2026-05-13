@@ -47,6 +47,7 @@ export default function Sidebar() {
     try {
       await api.post('/api/auth/logout')
     } finally {
+      document.cookie = 'session=; path=/; max-age=0'
       setUser(null)
       router.push('/login')
     }
