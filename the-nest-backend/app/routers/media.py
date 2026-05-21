@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/media", tags=["media"])
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm"}
 IMAGE_MAX_BYTES = 10 * 1024 * 1024   # 10 MB
-VIDEO_MAX_BYTES = 50 * 1024 * 1024   # 50 MB
+VIDEO_MAX_BYTES = 25 * 1024 * 1024   # 25 MB
 
 EXT_MAP = {
     "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
@@ -46,18 +46,22 @@ def upload_media(
     ext = EXT_MAP.get(content_type, "bin")
     path = f"{current_user.id}/{uuid.uuid4()}.{ext}"
 
-    with httpx.Client() as client:
-        res = client.put(
-            f"{settings.supabase_url}/storage/v1/object/post-media/{path}",
-            content=contents,
-            headers={
-                "Authorization": f"Bearer {settings.supabase_service_key}",
-                "Content-Type": content_type,
-                "x-upsert": "true",
-            },
-        )
+    try:
+        with httpx.Client(timeout=httpx.Timeout(10.0, write=120.0)) as client:
+            res = client.put(
+                f"{settings.supabase_url}/storage/v1/object/post-media/{path}",
+                content=contents,
+                headers={
+                    "Authorization": f"Bearer {settings.supabase_service_key}",
+                    "Content-Type": content_type,
+                    "x-upsert": "true",
+                },
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload request failed: {e}")
+
     if res.status_code not in (200, 201):
-        raise HTTPException(status_code=500, detail="Upload failed")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {res.status_code} {res.text}")
 
     url = f"{settings.supabase_url}/storage/v1/object/public/post-media/{path}"
     return {"url": url, "media_type": media_type}

@@ -1,11 +1,17 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Search } from 'lucide-react'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import type { Conversation, Message } from '@/types/message'
 import { formatDate } from '@/lib/utils'
+
+interface SearchUser {
+  username: string
+  display_name: string
+  avatar_url: string | null
+}
 
 function Avatar({ username, avatarUrl, displayName }: { username: string; avatarUrl: string | null; displayName: string }) {
   return (
@@ -26,6 +32,9 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [newMsgQuery, setNewMsgQuery] = useState('')
+  const [newMsgResults, setNewMsgResults] = useState<SearchUser[]>([])
+  const [newMsgLoading, setNewMsgLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -60,6 +69,25 @@ export default function MessagesPage() {
     }, 10000)
     return () => clearInterval(id)
   }, [activeUsername])
+
+  useEffect(() => {
+    if (!newMsgQuery.trim()) { setNewMsgResults([]); return }
+    const timer = setTimeout(async () => {
+      setNewMsgLoading(true)
+      try {
+        const { data } = await api.get(`/api/users/search?q=${encodeURIComponent(newMsgQuery.trim())}`)
+        setNewMsgResults(data)
+      } catch {}
+      finally { setNewMsgLoading(false) }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [newMsgQuery])
+
+  function openConversation(username: string) {
+    setActiveUsername(username)
+    setNewMsgQuery('')
+    setNewMsgResults([])
+  }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
@@ -102,7 +130,32 @@ export default function MessagesPage() {
         </div>
 
         {conversations.length === 0 ? (
-          <p className="p-4 text-sm text-gray-400 dark:text-gray-500">No conversations yet.</p>
+          <div className="p-4">
+            <p className="mb-3 text-sm text-gray-400 dark:text-gray-500">No conversations yet. Find someone to message:</p>
+            <div className="relative mb-2">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={newMsgQuery}
+                onChange={(e) => setNewMsgQuery(e.target.value)}
+                placeholder="Search users…"
+                className="w-full rounded-full border border-gray-300 bg-gray-50 py-2 pl-8 pr-3 text-sm outline-none focus:border-transparent focus:ring-2 focus:ring-amber-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-400"
+              />
+            </div>
+            {newMsgLoading && <p className="text-xs text-gray-400 dark:text-gray-500">Searching…</p>}
+            {newMsgResults.map((u) => (
+              <button
+                key={u.username}
+                onClick={() => openConversation(u.username)}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
+              >
+                <Avatar username={u.username} avatarUrl={u.avatar_url} displayName={u.display_name} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{u.display_name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">@{u.username}</p>
+                </div>
+              </button>
+            ))}
+          </div>
         ) : (
           conversations.map((c) => (
             <button

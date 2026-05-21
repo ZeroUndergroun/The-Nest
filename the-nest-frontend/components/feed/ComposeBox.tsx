@@ -12,11 +12,17 @@ interface ComposeBoxProps {
   placeholder?: string
 }
 
+const ALLOWED_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'video/mp4', 'video/quicktime', 'video/webm',
+])
+
 export default function ComposeBox({ onPost, parentPostId, placeholder }: ComposeBoxProps) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [mediaFile, setMediaFile] = useState<File | null>(null)
   const [mediaPreview, setMediaPreview] = useState<string | null>(null)
+  const [mediaError, setMediaError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { user } = useAuthStore()
   const remaining = 280 - content.length
@@ -24,16 +30,24 @@ export default function ComposeBox({ onPost, parentPostId, placeholder }: Compos
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
+    if (!ALLOWED_TYPES.has(file.type)) {
+      setMediaError('Unsupported file type. Please attach an image (JPEG, PNG, WebP, GIF) or video (MP4, MOV, WebM).')
+      setMediaFile(null)
+      setMediaPreview(null)
+      return
+    }
+    setMediaError(null)
     setMediaFile(file)
     setMediaPreview(URL.createObjectURL(file))
-    e.target.value = ''
   }
 
   function removeMedia() {
     if (mediaPreview) URL.revokeObjectURL(mediaPreview)
     setMediaFile(null)
     setMediaPreview(null)
+    setMediaError(null)
   }
 
   async function handleSubmit() {
@@ -90,6 +104,11 @@ export default function ComposeBox({ onPost, parentPostId, placeholder }: Compos
             maxLength={280}
           />
 
+          {/* Media error */}
+          {mediaError && (
+            <p className="mt-2 text-xs text-red-500">{mediaError}</p>
+          )}
+
           {/* Media preview */}
           {mediaPreview && mediaFile && (
             <div className="relative mt-2 w-fit max-w-full">
@@ -135,7 +154,7 @@ export default function ComposeBox({ onPost, parentPostId, placeholder }: Compos
                 {remaining}
               </span>
             </div>
-            <Button onClick={handleSubmit} loading={loading} disabled={!content.trim()}>
+            <Button onClick={handleSubmit} loading={loading} disabled={!content.trim() || !!mediaError}>
               Post
             </Button>
           </div>

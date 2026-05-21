@@ -94,6 +94,9 @@ def get_user_posts(username: str, current_user: User = Depends(get_current_user)
             "like_count": post.like_count,
             "reply_count": post.reply_count,
             "repost_count": post.repost_count,
+            "edit_count": post.edit_count,
+            "media_url": post.media_url,
+            "media_type": post.media_type,
             "created_at": post.created_at,
             "reposted_by": reposted_by,
             "user": {
