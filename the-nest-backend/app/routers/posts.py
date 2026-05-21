@@ -24,7 +24,7 @@ def get_discover(page: int = 1, current_user: User = Depends(get_current_user), 
 
 @router.post("/", response_model=PostWithAuthor, status_code=201)
 def create_post(body: PostCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return post_service.create_post(db, current_user, body.content, body.parent_post_id)
+    return post_service.create_post(db, current_user, body.content, body.parent_post_id, body.media_url, body.media_type)
 
 
 @router.get("/{post_id}", response_model=PostWithAuthor)

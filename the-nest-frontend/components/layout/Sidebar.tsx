@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, Bird, Home, LogOut, Mail, ShieldCheck, User } from 'lucide-react'
+import { Bell, Bird, Home, LogOut, Mail, Search, ShieldCheck, User } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
 
@@ -55,6 +55,7 @@ export default function Sidebar() {
 
   const navLinks = [
     { href: '/feed', label: 'Home', Icon: Home },
+    { href: '/search', label: 'Search', Icon: Search },
     { href: '/messages', label: 'Messages', Icon: Mail },
   ]
 

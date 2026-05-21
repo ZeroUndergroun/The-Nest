@@ -191,9 +191,30 @@ export default function PostCard({ post, onLike, onRepost, onDelete }: PostCardP
               </div>
             </div>
           ) : (
-            <p className="break-words whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-100">
-              {renderContent(localContent)}
-            </p>
+            <>
+              <p className="break-words whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-100">
+                {renderContent(localContent)}
+              </p>
+              {post.media_url && post.media_type && (
+                <div className="mt-2">
+                  {post.media_type === 'image' ? (
+                    <img
+                      src={post.media_url}
+                      alt="Post media"
+                      className="w-full rounded-xl object-cover max-h-96"
+                      onClick={stop}
+                    />
+                  ) : (
+                    <video
+                      src={post.media_url}
+                      controls
+                      className="w-full rounded-xl max-h-96"
+                      onClick={stop}
+                    />
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           {!editing && (

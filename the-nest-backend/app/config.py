@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     supabase_service_key: Optional[str] = None
     dev_allowed_emails: Optional[str] = None  # comma-separated test emails
     admin_emails: Optional[str] = None  # comma-separated admin emails
+    resend_from_email: str = "The Nest <onboarding@resend.dev>"
+    debug: bool = False
 
 
 settings = Settings()

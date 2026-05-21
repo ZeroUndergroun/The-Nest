@@ -8,6 +8,8 @@ export interface Post {
   reply_count: number
   repost_count: number
   edit_count: number
+  media_url?: string | null
+  media_type?: string | null
   created_at: string
   updated_at: string
   reposted_by?: string

@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/search")
 def search_users(q: str = Query(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return user_service.search_users(db, q)
+    return user_service.search_users(db, q, current_user.id)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -94,6 +94,9 @@ def get_user_posts(username: str, current_user: User = Depends(get_current_user)
             "like_count": post.like_count,
             "reply_count": post.reply_count,
             "repost_count": post.repost_count,
+            "edit_count": post.edit_count,
+            "media_url": post.media_url,
+            "media_type": post.media_type,
             "created_at": post.created_at,
             "reposted_by": reposted_by,
             "user": {

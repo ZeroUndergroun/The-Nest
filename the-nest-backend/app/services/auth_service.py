@@ -37,11 +37,12 @@ def create_email_verify_token(user_id: str) -> str:
 
 
 def _is_allowed_email(email: str) -> bool:
-    if email.lower().endswith("@calstatela.edu"):
+    lower = email.lower()
+    if lower.endswith("@calstatela.edu") or lower.endswith("@my.calstatela.edu"):
         return True
     if settings.dev_allowed_emails:
         allowed = {e.strip().lower() for e in settings.dev_allowed_emails.split(",")}
-        return email.lower() in allowed
+        return lower in allowed
     return False
 
 
@@ -63,7 +64,7 @@ def register(db: Session, email: str, password: str, username: str, display_name
         display_name=display_name,
         role=role,
         password_hash=hash_password(password),
-        is_approved=role != "staff",
+        is_approved=True,
         is_admin=email.lower() in admin_emails,
     )
     db.add(user)
@@ -71,11 +72,13 @@ def register(db: Session, email: str, password: str, username: str, display_name
     db.refresh(user)
 
     token = create_email_verify_token(str(user.id))
-    print(f"\n[DEV] Verification token for {user.email}: {token}\n")
+    if settings.debug:
+        print(f"\n[DEV] Verification token for {user.email}: {token}\n")
     try:
         email_service.send_verification_email(user.email, token)
     except Exception as e:
-        print(f"[DEV] Email send failed (use token above): {e}")
+        if settings.debug:
+            print(f"[DEV] Email send failed: {e}")
 
     return {"message": "Verification email sent. Check your inbox."}
 

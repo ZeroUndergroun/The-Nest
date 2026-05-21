@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 class PostCreate(BaseModel):
     content: str = Field(..., max_length=280)
     parent_post_id: Optional[UUID] = None
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
 
 
 class PostUpdate(BaseModel):
@@ -33,6 +35,8 @@ class PostResponse(BaseModel):
     reply_count: int
     repost_count: int
     edit_count: int
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
