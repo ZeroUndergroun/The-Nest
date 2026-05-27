@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     username: str
     display_name: str
     avatar_url: Optional[str]
+    banner_url: Optional[str]
     bio: Optional[str]
     role: UserRole
     is_admin: bool = False
@@ -26,6 +27,7 @@ class UserPublicProfile(BaseModel):
     username: str
     display_name: str
     avatar_url: Optional[str]
+    banner_url: Optional[str]
     bio: Optional[str]
     role: UserRole
     created_at: datetime
@@ -38,3 +40,4 @@ class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    banner_url: Optional[str] = None

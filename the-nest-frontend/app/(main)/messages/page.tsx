@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft, Search, SquarePen } from 'lucide-react'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import type { Conversation, Message } from '@/types/message'
@@ -32,6 +32,7 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [newMsgQuery, setNewMsgQuery] = useState('')
   const [newMsgResults, setNewMsgResults] = useState<SearchUser[]>([])
   const [newMsgLoading, setNewMsgLoading] = useState(false)
@@ -85,6 +86,7 @@ export default function MessagesPage() {
 
   function openConversation(username: string) {
     setActiveUsername(username)
+    setSearchOpen(false)
     setNewMsgQuery('')
     setNewMsgResults([])
   }
@@ -117,7 +119,6 @@ export default function MessagesPage() {
   }
 
   return (
-    // On mobile: flex-col, show one panel at a time. On md+: flex-row side by side.
     <div className="flex h-screen flex-col md:flex-row">
       {/* Conversation list — hidden on mobile when thread is active */}
       <div
@@ -125,36 +126,54 @@ export default function MessagesPage() {
           activeUsername ? 'hidden md:block' : 'flex flex-1 flex-col md:flex-none'
         }`}
       >
+        {/* Header with compose button */}
         <div className="sticky top-0 border-b border-gray-200 bg-white/90 p-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Messages</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Messages</h1>
+            <button
+              onClick={() => setSearchOpen((o) => !o)}
+              className={`rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                searchOpen ? 'text-amber-500' : 'text-gray-500 dark:text-gray-400'
+              }`}
+              title="New message"
+            >
+              <SquarePen size={18} />
+            </button>
+          </div>
+
+          {searchOpen && (
+            <div className="mt-3">
+              <div className="relative mb-2">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={newMsgQuery}
+                  onChange={(e) => setNewMsgQuery(e.target.value)}
+                  placeholder="Search users…"
+                  autoFocus
+                  className="w-full rounded-full border border-gray-300 bg-gray-50 py-2 pl-8 pr-3 text-sm outline-none focus:border-transparent focus:ring-2 focus:ring-amber-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-400"
+                />
+              </div>
+              {newMsgLoading && <p className="text-xs text-gray-400 dark:text-gray-500">Searching…</p>}
+              {newMsgResults.map((u) => (
+                <button
+                  key={u.username}
+                  onClick={() => openConversation(u.username)}
+                  className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
+                >
+                  <Avatar username={u.username} avatarUrl={u.avatar_url} displayName={u.display_name} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{u.display_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">@{u.username}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {conversations.length === 0 ? (
           <div className="p-4">
-            <p className="mb-3 text-sm text-gray-400 dark:text-gray-500">No conversations yet. Find someone to message:</p>
-            <div className="relative mb-2">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                value={newMsgQuery}
-                onChange={(e) => setNewMsgQuery(e.target.value)}
-                placeholder="Search users…"
-                className="w-full rounded-full border border-gray-300 bg-gray-50 py-2 pl-8 pr-3 text-sm outline-none focus:border-transparent focus:ring-2 focus:ring-amber-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-400"
-              />
-            </div>
-            {newMsgLoading && <p className="text-xs text-gray-400 dark:text-gray-500">Searching…</p>}
-            {newMsgResults.map((u) => (
-              <button
-                key={u.username}
-                onClick={() => openConversation(u.username)}
-                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
-              >
-                <Avatar username={u.username} avatarUrl={u.avatar_url} displayName={u.display_name} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{u.display_name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">@{u.username}</p>
-                </div>
-              </button>
-            ))}
+            <p className="text-sm text-gray-400 dark:text-gray-500">No conversations yet. Use the compose button to start one.</p>
           </div>
         ) : (
           conversations.map((c) => (

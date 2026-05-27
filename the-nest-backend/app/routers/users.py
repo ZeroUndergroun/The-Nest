@@ -15,6 +15,30 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 # /search, /me, and /me/avatar must come before /{username} to prevent path param conflicts
 
+ALLOWED_IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif"}
+
+
+def _upload_to_supabase(contents: bytes, content_type: str, bucket: str, path: str) -> str:
+    """Upload bytes to Supabase Storage and return the public URL."""
+    try:
+        with httpx.Client(timeout=httpx.Timeout(10.0, write=120.0)) as client:
+            res = client.put(
+                f"{settings.supabase_url}/storage/v1/object/{bucket}/{path}",
+                content=contents,
+                headers={
+                    "Authorization": f"Bearer {settings.supabase_service_key}",
+                    "Content-Type": content_type,
+                    "x-upsert": "true",
+                },
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload request failed: {e}")
+
+    if res.status_code not in (200, 201):
+        raise HTTPException(status_code=500, detail=f"Upload failed: {res.status_code} {res.text}")
+
+    return f"{settings.supabase_url}/storage/v1/object/public/{bucket}/{path}"
+
 
 @router.get("/search")
 def search_users(q: str = Query(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -23,7 +47,9 @@ def search_users(q: str = Query(...), current_user: User = Depends(get_current_u
 
 @router.patch("/me", response_model=UserResponse)
 def update_me(body: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return user_service.update_profile(db, current_user, body.display_name, body.bio, body.avatar_url)
+    return user_service.update_profile(
+        db, current_user, body.display_name, body.bio, body.avatar_url, body.banner_url
+    )
 
 
 @router.post("/me/avatar", response_model=UserResponse)
@@ -37,25 +63,31 @@ def upload_avatar(
 
     contents = file.file.read()
     ext = (file.filename or "jpg").rsplit(".", 1)[-1].lower()
-    if ext not in {"jpg", "jpeg", "png", "webp", "gif"}:
+    if ext not in ALLOWED_IMAGE_EXTS:
         raise HTTPException(status_code=400, detail="Unsupported image format")
 
     path = f"{current_user.id}.{ext}"
-    with httpx.Client() as client:
-        res = client.put(
-            f"{settings.supabase_url}/storage/v1/object/avatars/{path}",
-            content=contents,
-            headers={
-                "Authorization": f"Bearer {settings.supabase_service_key}",
-                "Content-Type": file.content_type or "image/jpeg",
-                "x-upsert": "true",
-            },
-        )
-    if res.status_code not in (200, 201):
-        raise HTTPException(status_code=500, detail="Upload failed")
-
-    avatar_url = f"{settings.supabase_url}/storage/v1/object/public/avatars/{path}"
+    avatar_url = _upload_to_supabase(contents, file.content_type or "image/jpeg", "avatars", path)
     return user_service.update_profile(db, current_user, None, None, avatar_url)
+
+
+@router.post("/me/banner", response_model=UserResponse)
+def upload_banner(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not settings.supabase_url or not settings.supabase_service_key:
+        raise HTTPException(status_code=503, detail="Banner upload not configured")
+
+    contents = file.file.read()
+    ext = (file.filename or "jpg").rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_IMAGE_EXTS:
+        raise HTTPException(status_code=400, detail="Unsupported image format")
+
+    path = f"{current_user.id}.{ext}"
+    banner_url = _upload_to_supabase(contents, file.content_type or "image/jpeg", "banners", path)
+    return user_service.update_profile(db, current_user, None, None, None, banner_url)
 
 
 @router.get("/{username}", response_model=UserPublicProfile)

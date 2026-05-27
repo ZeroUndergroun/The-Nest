@@ -9,6 +9,7 @@ import type { UserPublicProfile } from '@/types/user'
 import type { Post } from '@/types/post'
 import RoleBadge from '@/components/profile/RoleBadge'
 import PostCard from '@/components/feed/PostCard'
+import ImageLightbox from '@/components/feed/ImageLightbox'
 import Button from '@/components/ui/Button'
 import { useAuthStore } from '@/store/authStore'
 
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   const [openList, setOpenList] = useState<'followers' | 'following' | null>(null)
   const [followersList, setFollowersList] = useState<BasicUser[]>([])
   const [followingList, setFollowingList] = useState<BasicUser[]>([])
+  const [lightboxPost, setLightboxPost] = useState<Post | null>(null)
 
   useEffect(() => {
     if (!username) return
@@ -113,6 +115,7 @@ export default function ProfilePage() {
   const activeList = openList === 'followers' ? followersList : followingList
 
   return (
+    <>
     <div>
       {/* Header bar */}
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
@@ -121,11 +124,15 @@ export default function ProfilePage() {
       </div>
 
       {/* Banner */}
-      <div className="h-32 w-full bg-gray-200 dark:bg-gray-800" />
+      <div className="h-32 w-full overflow-hidden bg-gray-200 dark:bg-gray-800">
+        {profile.banner_url && (
+          <img src={profile.banner_url} alt="Profile banner" className="h-full w-full object-cover" />
+        )}
+      </div>
 
       {/* Avatar + action button row */}
-      <div className="-mt-10 flex items-end justify-between px-4">
-        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-amber-400 text-2xl font-bold text-black dark:border-gray-950">
+      <div className="-mt-[80px] flex items-end justify-between px-4">
+        <div className="flex h-[160px] w-[160px] items-center justify-center overflow-hidden rounded-full border-4 border-white bg-amber-400 text-5xl font-bold text-black dark:border-gray-950">
           {profile.avatar_url ? (
             <img
               src={profile.avatar_url}
@@ -260,16 +267,25 @@ export default function ProfilePage() {
               No posts yet.
             </p>
           ) : (
-            posts.map((post) => <PostCard key={post.id} post={post} />)
+            posts.map((post) => <PostCard key={post.id} post={post} onImageClick={setLightboxPost} />)
           )
         ) : replies.length === 0 ? (
           <p className="p-8 text-center text-sm text-gray-400 dark:text-gray-500">
             No replies yet.
           </p>
         ) : (
-          replies.map((post) => <PostCard key={post.id} post={post} />)
+          replies.map((post) => <PostCard key={post.id} post={post} onImageClick={setLightboxPost} />)
         )}
       </div>
+
     </div>
+
+      {lightboxPost && (
+        <ImageLightbox
+          post={lightboxPost}
+          onClose={() => setLightboxPost(null)}
+        />
+      )}
+    </>
   )
 }

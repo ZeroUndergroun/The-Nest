@@ -19,6 +19,7 @@ def get_public_profile(db: Session, username: str, current_user_id) -> dict:
         "username": user.username,
         "display_name": user.display_name,
         "avatar_url": user.avatar_url,
+        "banner_url": user.banner_url,
         "bio": user.bio,
         "role": user.role,
         "created_at": user.created_at,
@@ -35,13 +36,22 @@ def get_profile(db: Session, username: str) -> User:
     return user
 
 
-def update_profile(db: Session, user: User, display_name: str | None, bio: str | None, avatar_url: str | None) -> User:
+def update_profile(
+    db: Session,
+    user: User,
+    display_name: str | None,
+    bio: str | None,
+    avatar_url: str | None,
+    banner_url: str | None = None,
+) -> User:
     if display_name is not None:
         user.display_name = display_name
     if bio is not None:
         user.bio = bio
     if avatar_url is not None:
         user.avatar_url = avatar_url
+    if banner_url is not None:
+        user.banner_url = banner_url
     db.commit()
     db.refresh(user)
     return user

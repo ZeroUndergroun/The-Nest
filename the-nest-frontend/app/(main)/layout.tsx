@@ -17,7 +17,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Right sidebar — hidden on mobile */}
       <aside className="hidden min-w-0 flex-1 lg:block">
-        <RightSidebar />
+        <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <RightSidebar />
+        </div>
       </aside>
 
       {/* Bottom nav — mobile only */}

@@ -22,6 +22,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     display_name = Column(String, nullable=False)
     avatar_url = Column(String, nullable=True)
+    banner_url = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     role = Column(UserRole, nullable=False)
     password_hash = Column(String, nullable=False)

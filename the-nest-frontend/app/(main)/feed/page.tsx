@@ -5,6 +5,7 @@ import api from '@/lib/api'
 import type { Post } from '@/types/post'
 import PostCard from '@/components/feed/PostCard'
 import ComposeBox from '@/components/feed/ComposeBox'
+import ImageLightbox from '@/components/feed/ImageLightbox'
 
 type Tab = 'latest' | 'foryou'
 
@@ -14,6 +15,7 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [lightboxPost, setLightboxPost] = useState<Post | null>(null)
 
   const fetchPosts = useCallback(async (activeTab: Tab, pageNum: number) => {
     setLoading(true)
@@ -58,6 +60,7 @@ export default function FeedPage() {
   }
 
   return (
+    <>
     <div>
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
         <div className="flex">
@@ -90,7 +93,7 @@ export default function FeedPage() {
       ) : (
         <>
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} />
+            <PostCard key={post.id} post={post} onLike={handleLike} onRepost={handleRepost} onImageClick={setLightboxPost} />
           ))}
           {hasMore && (
             <button
@@ -107,5 +110,15 @@ export default function FeedPage() {
         </>
       )}
     </div>
+
+    {lightboxPost && (
+      <ImageLightbox
+        post={lightboxPost}
+        onClose={() => setLightboxPost(null)}
+        onLike={handleLike}
+        onRepost={handleRepost}
+      />
+    )}
+    </>
   )
 }

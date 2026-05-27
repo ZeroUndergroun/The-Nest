@@ -6,6 +6,7 @@ export interface User {
   username: string
   display_name: string
   avatar_url: string | null
+  banner_url: string | null
   bio: string | null
   role: Role
   is_admin: boolean
@@ -19,6 +20,7 @@ export interface UserPublicProfile {
   username: string
   display_name: string
   avatar_url: string | null
+  banner_url: string | null
   bio: string | null
   role: Role
   created_at: string

@@ -12,12 +12,14 @@ import Input from '@/components/ui/Input'
 export default function EditProfilePage() {
   const router = useRouter()
   const { user, setUser } = useAuthStore()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
 
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
@@ -31,7 +33,7 @@ export default function EditProfilePage() {
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploading(true)
+    setUploadingAvatar(true)
     setError('')
     try {
       const formData = new FormData()
@@ -40,11 +42,31 @@ export default function EditProfilePage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setUser(data)
-    } catch {
-      setError('Avatar upload failed. Please try again.')
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'Avatar upload failed. Please try again.')
     } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      setUploadingAvatar(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
+
+  async function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingBanner(true)
+    setError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const { data } = await api.post('/api/users/me/banner', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setUser(data)
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'Banner upload failed. Please try again.')
+    } finally {
+      setUploadingBanner(false)
+      if (bannerInputRef.current) bannerInputRef.current.value = ''
     }
   }
 
@@ -65,8 +87,8 @@ export default function EditProfilePage() {
       setUser(data)
       setSuccess(true)
       setTimeout(() => router.push(`/profile/${data.username}`), 800)
-    } catch {
-      setError('Failed to save changes. Please try again.')
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'Failed to save changes. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -87,12 +109,39 @@ export default function EditProfilePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-lg space-y-5 p-6">
+        {/* Banner */}
+        <div className="-mx-6 -mt-6">
+          <button
+            type="button"
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={uploadingBanner}
+            className="group relative block h-32 w-full overflow-hidden bg-gray-200 dark:bg-gray-800"
+          >
+            {user?.banner_url && (
+              <img src={user.banner_url} alt="Banner" className="h-full w-full object-cover" />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+              <Camera size={24} className="text-white" />
+            </div>
+          </button>
+          <p className="mt-1 text-center text-xs text-gray-400 dark:text-gray-500">
+            {uploadingBanner ? 'Uploading…' : 'Click to change banner'}
+          </p>
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleBannerChange}
+            className="hidden"
+          />
+        </div>
+
         {/* Avatar */}
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={uploadingAvatar}
             className="group relative"
           >
             <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-amber-400 text-2xl font-bold text-black">
@@ -107,10 +156,10 @@ export default function EditProfilePage() {
             </div>
           </button>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            {uploading ? 'Uploading…' : 'Click to change photo'}
+            {uploadingAvatar ? 'Uploading…' : 'Click to change photo'}
           </p>
           <input
-            ref={fileInputRef}
+            ref={avatarInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleAvatarChange}

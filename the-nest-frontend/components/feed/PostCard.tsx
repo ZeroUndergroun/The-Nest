@@ -14,6 +14,7 @@ interface PostCardProps {
   onLike?: (postId: string) => void
   onRepost?: (postId: string) => void
   onDelete?: (postId: string) => void
+  onImageClick?: (post: Post) => void
 }
 
 function renderContent(content: string) {
@@ -34,7 +35,7 @@ function renderContent(content: string) {
   })
 }
 
-export default function PostCard({ post, onLike, onRepost, onDelete }: PostCardProps) {
+export default function PostCard({ post, onLike, onRepost, onDelete, onImageClick }: PostCardProps) {
   const { user: me } = useAuthStore()
   const router = useRouter()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -201,8 +202,8 @@ export default function PostCard({ post, onLike, onRepost, onDelete }: PostCardP
                     <img
                       src={post.media_url}
                       alt="Post media"
-                      className="w-full rounded-xl object-cover max-h-96"
-                      onClick={stop}
+                      className="w-full cursor-zoom-in rounded-xl object-cover max-h-96"
+                      onClick={(e) => { stop(e); onImageClick?.(post) }}
                     />
                   ) : (
                     <video
