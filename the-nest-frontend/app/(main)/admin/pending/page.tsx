@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
@@ -36,8 +37,19 @@ export default function PendingApprovalsPage() {
 
   return (
     <div>
-      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 p-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
+      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/90">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-white">Admin</h1>
+        <div className="mt-2 flex gap-2">
+          <span className="rounded-full bg-amber-500 px-3 py-1 text-sm font-medium text-white">
+            Pending Approvals
+          </span>
+          <Link
+            href="/admin/bulletin"
+            className="rounded-full px-3 py-1 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          >
+            Bulletin Board
+          </Link>
+        </div>
       </div>
 
       {loading ? (
