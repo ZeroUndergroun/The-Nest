@@ -76,8 +76,8 @@ def register(db: Session, email: str, password: str, username: str, display_name
         print(f"\n[DEV] Verification token for {user.email}: {token}\n")
     try:
         email_service.send_verification_email(user.email, token)
-    except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+    except Exception:
+        pass
 
     return {"message": "Verification email sent. Check your inbox."}
 
